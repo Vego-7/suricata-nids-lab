@@ -105,8 +105,7 @@ def monitor_ssh_logs():
                     f"User: {event['username']}",
                     flush=True,
                 )
-
-            detector.process(event)
+                detector.process(event)
 
     finally:
         if process.poll() is None:
