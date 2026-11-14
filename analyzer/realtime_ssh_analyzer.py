@@ -77,6 +77,14 @@ def monitor_ssh_logs():
             event = parse_failed_login(line)
 
             if event:
+                print(
+                    f"[SSH FAILED LOGIN] "
+                    f"Time: {event['time'].isoformat()} "
+                    f"Source: {event['src_ip']} "
+                    f"User: {event['username']}",
+                    flush=True,
+                )
+
                 detector.process(event)
 
     finally:
