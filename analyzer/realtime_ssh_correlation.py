@@ -168,6 +168,7 @@ class RealtimeSSHCorrelator:
             if not events:
                 del self.syn_events[key]
 
+    
     @staticmethod
     def print_correlation(syn, ssh, delta):
         print()
@@ -179,6 +180,26 @@ class RealtimeSSHCorrelator:
         print(f"Username: {ssh['username']}")
         print(f"Time Difference: {delta:.3f} seconds")
         print("-" * 45, flush=True)
+
+        # Build a structured security alert
+        alert = {
+            "event_type": "correlated_ssh_failure",
+            "timestamp": ssh["time"],
+            "src_ip": ssh["src_ip"],
+            "src_port": ssh["src_port"],
+            "dest_ip": syn["dest_ip"],
+            "dest_port": syn["dest_port"],
+            "username": ssh["username"],
+            "time_delta_seconds": round(delta, 3),
+        }
+
+        # Save alert as JSONL
+        try:
+            log_path = write_json_alert(alert)
+            print(f"[JSON ALERT SAVED] {log_path}", flush=True)
+        except (OSError, TypeError, ValueError) as exc:
+            print(f"[JSON ALERT ERROR] {exc}", flush=True)
+
 
 
 def follow_suricata(event_queue, stop_event):
