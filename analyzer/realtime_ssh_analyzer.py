@@ -13,18 +13,40 @@ class RealtimeSSHDetector:
     def __init__(self):
         self.windows = defaultdict(deque)
         self.detected = defaultdict(bool)
+        self.latest_times = {}
 
     def process(self, event):
         src_ip = event["src_ip"]
         event_time = event["time"]
 
-        window = self.windows[src_ip]
-        window.append(event)
+        # Track the latest event timestamp for each source IP
+        latest_time = self.latest_times.get(src_ip)
 
-        # Remove events outside the sliding time window
-        while window and (
-            event_time - window[0]["time"]
-        ) > timedelta(seconds=TIME_WINDOW):
+        if latest_time is None or event_time > latest_time:
+            latest_time = event_time
+            self.latest_times[src_ip] = latest_time
+
+        # Ignore events older than the current sliding window
+        cutoff_time = latest_time - timedelta(seconds=TIME_WINDOW)
+
+        if event_time < cutoff_time:
+            return
+
+        window = self.windows[src_ip]
+
+        # Insert event in timestamp order
+        insert_index = len(window)
+
+        while (
+            insert_index > 0
+            and window[insert_index - 1]["time"] > event_time
+        ):
+            insert_index -= 1
+
+        window.insert(insert_index, event)
+
+        # Remove expired events
+        while window and window[0]["time"] < cutoff_time:
             window.popleft()
 
         failure_count = len(window)
@@ -33,7 +55,7 @@ class RealtimeSSHDetector:
         # Alert only when the threshold is first reached
         if threshold_reached and not self.detected[src_ip]:
             print("\n[SSH BRUTE-FORCE-LIKE DETECTED]")
-            print(f"Time (UTC): {event_time.isoformat()}")
+            print(f"Time (UTC): {latest_time.isoformat()}")
             print(f"Source IP: {src_ip}")
             print(f"Failed Attempts: {failure_count}")
             print(f"Time Window: {TIME_WINDOW} seconds")
@@ -44,7 +66,6 @@ class RealtimeSSHDetector:
             print("-" * 40, flush=True)
 
         self.detected[src_ip] = threshold_reached
-
 
 def monitor_ssh_logs():
     detector = RealtimeSSHDetector()
@@ -85,7 +106,7 @@ def monitor_ssh_logs():
                     flush=True,
                 )
 
-                detector.process(event)
+            detector.process(event)
 
     finally:
         if process.poll() is None:
