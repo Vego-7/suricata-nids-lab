@@ -9,7 +9,7 @@ from collections import defaultdict, deque
 from datetime import datetime
 
 from ssh_failure_analyzer import parse_failed_login
-
+from json_alert_writer import write_json_alert
 
 # Configuration
 SURICATA_LOG = "/var/log/suricata/eve.json"
