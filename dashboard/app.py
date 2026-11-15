@@ -2,7 +2,7 @@ import json
 from collections import Counter
 from pathlib import Path
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 
 app = Flask(__name__)
 
@@ -37,10 +37,7 @@ def load_alerts():
 
 @app.route("/")
 def index():
-    return (
-        "<h1>Suricata NIDS Security Dashboard</h1>"
-        "<p>Dashboard API is available at /api/alerts/summary</p>"
-    )
+    return render_template("index.html")
 
 
 @app.route("/api/alerts/summary")
