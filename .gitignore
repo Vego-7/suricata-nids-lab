@@ -1,22 +1,36 @@
 
-# Python cache
+# Python cache and virtual environments
 __pycache__/
 *.pyc
 .venv/
+venv/
 
-# Suricata logs
+# Suricata and security logs
 *.log
+*.jsonl
 eve.json
 stats.log
 
-# Backup files
+# Backups
 *.bak
 
 # Secrets and environment variables
 .env
 .env.*
+!.env.example
+
+# SSH keys and credentials
+.ssh/
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+github_nids_ed25519
+github_nids_ed25519.*
 *.pem
 *.key
+*.p12
+*.pfx
 
 # Editor and operating system
 .vscode/
