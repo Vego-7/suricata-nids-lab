@@ -5,14 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Suricata NIDS Dashboard</title>
+
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
         body {
             margin: 0;
             background: #0f172a;
             color: #e2e8f0;
             font-family: Arial, sans-serif;
+            line-height: 1.5;
         }
 
         header {
@@ -21,18 +25,51 @@
             border-bottom: 1px solid #334155;
         }
 
-        h1 { margin: 0 0 8px; }
-        h2 { font-size: 18px; }
+        .header-content,
+        main {
+            max-width: 1250px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        h2 {
+            margin: 0 0 16px;
+            font-size: 18px;
+        }
+
+        p {
+            margin: 8px 0;
+        }
 
         main {
-            max-width: 1200px;
-            margin: auto;
             padding: 24px;
+        }
+
+        .muted {
+            color: #94a3b8;
+        }
+
+        .error {
+            color: #f87171;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            grid-template-columns:
+                repeat(auto-fit, minmax(220px, 1fr));
             gap: 16px;
         }
 
@@ -41,6 +78,7 @@
             background: #1e293b;
             border: 1px solid #334155;
             border-radius: 12px;
+            min-width: 0;
         }
 
         .number {
@@ -49,34 +87,256 @@
             color: #38bdf8;
         }
 
+        .count-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 8px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .charts {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .timeline-scroll {
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }
+
+        .timeline-chart {
+            display: flex;
+            gap: 12px;
+            min-height: 230px;
+            align-items: flex-end;
+        }
+
+        .timeline-item {
+            display: flex;
+            flex: 1 0 72px;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+        }
+
+        .timeline-value {
+            font-size: 13px;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        .timeline-track {
+            height: 150px;
+            width: 100%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            border-bottom: 1px solid #475569;
+        }
+
+        .timeline-bar {
+            width: 55%;
+            background: linear-gradient(
+                180deg, #38bdf8, #0284c7
+            );
+            border-radius: 6px 6px 0 0;
+            min-height: 3px;
+        }
+
+        .timeline-label {
+            color: #94a3b8;
+            font-size: 11px;
+            overflow-wrap: anywhere;
+        }
+
+        .source-item {
+            margin-bottom: 18px;
+        }
+
+        .source-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 7px;
+            font-size: 13px;
+            overflow-wrap: anywhere;
+        }
+
+        .source-track {
+            height: 12px;
+            border-radius: 8px;
+            background: #334155;
+            overflow: hidden;
+        }
+
+        .source-bar {
+            height: 100%;
+            background: #22c55e;
+            border-radius: 8px;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns:
+                repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        input,
+        select,
+        button {
+            font: inherit;
+        }
+
+        input,
+        select {
+            width: 100%;
+            background: #0f172a;
+            border: 1px solid #475569;
+            border-radius: 8px;
+            padding: 10px;
+            color: #e2e8f0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            color: #cbd5e1;
+        }
+
+        button {
+            background: #0369a1;
+            color: white;
+            padding: 9px 14px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #0284c7;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        .table-card {
+            margin-top: 20px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
+            font-size: 13px;
         }
 
-        th, td {
+        th,
+        td {
             padding: 12px;
-            border-bottom: 1px solid #334155;
             text-align: left;
+            border-bottom: 1px solid #334155;
+            white-space: nowrap;
         }
 
-        th { color: #94a3b8; }
+        th {
+            color: #94a3b8;
+        }
 
-        .table-wrap { overflow-x: auto; }
-        .error { color: #f87171; }
-        .muted { color: #94a3b8; }
+        tbody tr:hover {
+            background: #273449;
+        }
+
+        .details-button {
+            padding: 6px 10px;
+            font-size: 12px;
+        }
+
+        dialog {
+            width: min(600px, 92vw);
+            max-height: 85vh;
+            overflow-y: auto;
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        dialog::backdrop {
+            background: rgba(0, 0, 0, 0.75);
+        }
+
+        .detail-row {
+            padding: 10px 0;
+            border-bottom: 1px solid #334155;
+            overflow-wrap: anywhere;
+        }
+
+        dt {
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        dd {
+            margin: 4px 0 0;
+        }
+
+        .dialog-actions {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        @media (max-width: 600px) {
+            header,
+            main {
+                padding: 16px;
+            }
+
+            h1 {
+                font-size: 21px;
+            }
+
+            .charts {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
     <header>
-        <h1>Suricata NIDS Security Dashboard</h1>
-        <p class="muted">Security Monitoring &amp; Alert Analysis</p>
+        <div class="header-content">
+            <h1>Suricata NIDS Security Dashboard</h1>
+            <p class="muted">
+                Network Security Monitoring &amp; Alert Analysis
+            </p>
+        </div>
     </header>
 
     <main>
-        <p id="status" class="muted">Loading security alerts...</p>
+        <div class="status-bar">
+            <p id="status" class="muted" role="status">
+                Loading security alerts...
+            </p>
+            <button id="refresh-button" type="button">
+                Refresh Now
+            </button>
+        </div>
 
-        <section class="grid">
+        <section class="grid" aria-label="Security overview">
             <div class="card">
                 <h2>Total Alerts</h2>
                 <div class="number" id="total-alerts">-</div>
@@ -84,69 +344,404 @@
 
             <div class="card">
                 <h2>Event Types</h2>
-                <div id="event-types">-</div>
+                <div id="event-types">Loading...</div>
             </div>
 
             <div class="card">
-                <h2>Source IPs</h2>
-                <div id="source-ips">-</div>
+                <h2>Unique Source IPs</h2>
+                <div class="number" id="unique-ips">-</div>
             </div>
 
             <div class="card">
                 <h2>Usernames</h2>
-                <div id="usernames">-</div>
+                <div id="usernames">Loading...</div>
             </div>
         </section>
 
-        <section class="card" style="margin-top: 24px;">
-            <h2>Recent Security Alerts</h2>
+        <section class="charts" aria-label="Security charts">
+            <div class="card">
+                <h2>Security Event Timeline</h2>
+                <p class="muted">
+                    Alerts per UTC hour — latest 12 active hours
+                </p>
+                <div class="timeline-scroll">
+                    <div
+                        id="timeline-chart"
+                        class="timeline-chart"
+                    ></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Source IP Analysis</h2>
+                <p class="muted">
+                    Top source IPs by alert count
+                </p>
+                <div id="source-chart"></div>
+            </div>
+        </section>
+
+        <section class="card table-card">
+            <h2>Security Alert History</h2>
+
+            <div class="filters">
+                <div>
+                    <label for="event-filter">
+                        Event Type
+                    </label>
+                    <select id="event-filter">
+                        <option value="">All Event Types</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="ip-filter">
+                        Source IP
+                    </label>
+                    <select id="ip-filter">
+                        <option value="">All Source IPs</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="search-input">
+                        Search Alerts
+                    </label>
+                    <input
+                        id="search-input"
+                        type="search"
+                        placeholder="IP, username, port..."
+                    >
+                </div>
+            </div>
+
+            <p id="filter-count" class="muted">
+                Loading alert history...
+            </p>
+
             <div class="table-wrap">
                 <table>
                     <thead>
                         <tr>
-                            <th>Timestamp</th>
+                            <th>Timestamp (UTC)</th>
                             <th>Event Type</th>
                             <th>Source IP</th>
                             <th>Source Port</th>
                             <th>Username</th>
-                            <th>Time Delta</th>
+                            <th>Time Delta (s)</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody id="recent-alerts">
-                        <tr><td colspan="6">Loading...</td></tr>
+
+                    <tbody id="alerts-table">
+                        <tr>
+                            <td colspan="7">Loading...</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </section>
     </main>
 
+    <dialog id="details-dialog">
+        <h2>Security Alert Details</h2>
+        <dl id="details-content"></dl>
+        <div class="dialog-actions">
+            <button id="close-details" type="button">
+                Close
+            </button>
+        </div>
+    </dialog>
+
     <script>
-        function renderCounts(elementId, counts) {
+        const state = {
+            alerts: [],
+            loading: false
+        };
+
+        function formatValue(value) {
+            if (
+                value === null ||
+                value === undefined ||
+                value === ""
+            ) {
+                return "-";
+            }
+
+            return String(value);
+        }
+
+        function showStatus(message, isError = false) {
+            const status = document.getElementById("status");
+            status.textContent = message;
+            status.className = isError ? "error" : "muted";
+        }
+
+        function renderCountList(elementId, counts) {
             const container = document.getElementById(elementId);
             container.replaceChildren();
 
-            const entries = Object.entries(counts || {});
-            if (entries.length === 0) {
+            const entries = Object.entries(counts || {})
+                .sort((a, b) => b[1] - a[1]);
+
+            if (!entries.length) {
                 container.textContent = "No data";
                 return;
             }
 
-            for (const [name, count] of entries) {
-                const row = document.createElement("p");
-                row.textContent = `${name}: ${count}`;
+            for (const [name, count] of entries.slice(0, 4)) {
+                const row = document.createElement("div");
+                row.className = "count-row";
+
+                const label = document.createElement("span");
+                label.textContent = name;
+
+                const value = document.createElement("strong");
+                value.textContent = String(count);
+
+                row.append(label, value);
                 container.appendChild(row);
+            }
+
+            if (entries.length > 4) {
+                const more = document.createElement("p");
+                more.className = "muted";
+                more.textContent =
+                    `+ ${entries.length - 4} more`;
+                container.appendChild(more);
             }
         }
 
-        function renderAlerts(alerts) {
-            const tbody = document.getElementById("recent-alerts");
+        function renderOverview(data) {
+            document.getElementById("total-alerts").textContent =
+                data.total_alerts;
+
+            document.getElementById("unique-ips").textContent =
+                Object.keys(data.source_ips || {}).length;
+
+            renderCountList("event-types", data.event_types);
+            renderCountList("usernames", data.usernames);
+        }
+
+        function renderTimeline(timeline) {
+            const container =
+                document.getElementById("timeline-chart");
+
+            container.replaceChildren();
+
+            const entries = Array.isArray(timeline)
+                ? timeline.slice(-12)
+                : [];
+
+            if (!entries.length) {
+                container.textContent = "No timeline data";
+                return;
+            }
+
+            const maxCount = Math.max(
+                1,
+                ...entries.map(item => Number(item.count) || 0)
+            );
+
+            for (const item of entries) {
+                const count = Number(item.count) || 0;
+
+                const column = document.createElement("div");
+                column.className = "timeline-item";
+                column.setAttribute(
+                    "aria-label",
+                    `${item.hour}: ${count} alerts`
+                );
+
+                const value = document.createElement("span");
+                value.className = "timeline-value";
+                value.textContent = String(count);
+
+                const track = document.createElement("div");
+                track.className = "timeline-track";
+
+                const bar = document.createElement("div");
+                bar.className = "timeline-bar";
+                bar.style.height =
+                    `${(count / maxCount) * 100}%`;
+                bar.title = `${item.hour}: ${count} alerts`;
+
+                const label = document.createElement("span");
+                label.className = "timeline-label";
+                label.textContent = String(item.hour)
+                    .slice(5, 16)
+                    .replace("T", " ");
+
+                track.appendChild(bar);
+                column.append(value, track, label);
+                container.appendChild(column);
+            }
+        }
+
+        function renderSourceChart(sourceIPs) {
+            const container =
+                document.getElementById("source-chart");
+
+            container.replaceChildren();
+
+            const entries = Object.entries(sourceIPs || {})
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 8);
+
+            if (!entries.length) {
+                container.textContent = "No source IP data";
+                return;
+            }
+
+            const maxCount = Math.max(
+                1,
+                ...entries.map(item => Number(item[1]) || 0)
+            );
+
+            for (const [ip, count] of entries) {
+                const item = document.createElement("div");
+                item.className = "source-item";
+
+                const heading = document.createElement("div");
+                heading.className = "source-heading";
+
+                const name = document.createElement("span");
+                name.textContent = ip;
+
+                const value = document.createElement("strong");
+                value.textContent = String(count);
+
+                heading.append(name, value);
+
+                const track = document.createElement("div");
+                track.className = "source-track";
+
+                const bar = document.createElement("div");
+                bar.className = "source-bar";
+                bar.style.width =
+                    `${(Number(count) / maxCount) * 100}%`;
+
+                track.appendChild(bar);
+                item.append(heading, track);
+                container.appendChild(item);
+            }
+        }
+
+        function updateSelect(elementId, values, allLabel) {
+            const select = document.getElementById(elementId);
+            const previousValue = select.value;
+
+            const options = [...new Set(values)]
+                .filter(value => typeof value === "string")
+                .sort();
+
+            select.replaceChildren();
+            select.add(new Option(allLabel, ""));
+
+            for (const value of options) {
+                select.add(new Option(value, value));
+            }
+
+            select.value = options.includes(previousValue)
+                ? previousValue
+                : "";
+        }
+
+        function updateFilters() {
+            updateSelect(
+                "event-filter",
+                state.alerts.map(alert => alert.event_type),
+                "All Event Types"
+            );
+
+            updateSelect(
+                "ip-filter",
+                state.alerts.map(alert => alert.src_ip),
+                "All Source IPs"
+            );
+        }
+
+        function showAlertDetails(alert) {
+            const dialog =
+                document.getElementById("details-dialog");
+
+            const content =
+                document.getElementById("details-content");
+
+            content.replaceChildren();
+
+            for (const [field, value] of Object.entries(alert)) {
+                const row = document.createElement("div");
+                row.className = "detail-row";
+
+                const label = document.createElement("dt");
+                label.textContent = field;
+
+                const detail = document.createElement("dd");
+                detail.textContent = formatValue(value);
+
+                row.append(label, detail);
+                content.appendChild(row);
+            }
+
+            dialog.showModal();
+        }
+
+        function renderAlertTable() {
+            const tbody =
+                document.getElementById("alerts-table");
+
+            const selectedEvent =
+                document.getElementById("event-filter").value;
+
+            const selectedIP =
+                document.getElementById("ip-filter").value;
+
+            const query =
+                document.getElementById("search-input")
+                    .value.trim().toLowerCase();
+
+            const filtered = state.alerts.filter(alert => {
+                if (
+                    selectedEvent &&
+                    alert.event_type !== selectedEvent
+                ) {
+                    return false;
+                }
+
+                if (
+                    selectedIP &&
+                    alert.src_ip !== selectedIP
+                ) {
+                    return false;
+                }
+
+                if (query) {
+                    const searchable = Object.values(alert)
+                        .map(formatValue)
+                        .join(" ")
+                        .toLowerCase();
+
+                    if (!searchable.includes(query)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            document.getElementById("filter-count").textContent =
+                `Showing ${filtered.length} of ` +
+                `${state.alerts.length} security alerts`;
+
             tbody.replaceChildren();
 
-            if (!alerts.length) {
+            if (!filtered.length) {
                 const row = tbody.insertRow();
                 const cell = row.insertCell();
-                cell.colSpan = 6;
-                cell.textContent = "No security alerts found";
+
+                cell.colSpan = 7;
+                cell.textContent = "No matching security alerts";
                 return;
             }
 
@@ -159,28 +754,46 @@
                 "time_delta_seconds"
             ];
 
-            for (const alert of alerts) {
+            for (const alert of filtered) {
                 const row = tbody.insertRow();
 
                 for (const field of fields) {
                     const cell = row.insertCell();
-                    const value = alert[field];
-
-                    cell.textContent =
-                        value === undefined || value === null
-                            ? "-"
-                            : String(value);
+                    cell.textContent = formatValue(alert[field]);
                 }
+
+                const actionCell = row.insertCell();
+                const button = document.createElement("button");
+
+                button.type = "button";
+                button.className = "details-button";
+                button.textContent = "Details";
+
+                button.addEventListener("click", () => {
+                    showAlertDetails(alert);
+                });
+
+                actionCell.appendChild(button);
             }
         }
 
         async function loadDashboard() {
-            const status = document.getElementById("status");
+            if (state.loading) {
+                return;
+            }
+
+            state.loading = true;
+
+            const refreshButton =
+                document.getElementById("refresh-button");
+
+            refreshButton.disabled = true;
 
             try {
-                const response = await fetch("/api/alerts/summary", {
-                    cache: "no-store"
-                });
+                const response = await fetch(
+                    "/api/alerts/summary",
+                    { cache: "no-store" }
+                );
 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}`);
@@ -188,24 +801,58 @@
 
                 const data = await response.json();
 
-                document.getElementById("total-alerts").textContent =
-                    data.total_alerts;
+                if (!Array.isArray(data.alerts)) {
+                    throw new Error("Invalid alerts response");
+                }
 
-                renderCounts("event-types", data.event_types);
-                renderCounts("source-ips", data.source_ips);
-                renderCounts("usernames", data.usernames);
-                renderAlerts(data.recent_alerts || []);
+                state.alerts = data.alerts;
 
-                status.textContent = "Security alerts loaded successfully";
-                status.className = "muted";
+                renderOverview(data);
+                renderTimeline(data.timeline);
+                renderSourceChart(data.source_ips);
+                updateFilters();
+                renderAlertTable();
+
+                const now = new Date().toLocaleTimeString();
+
+                showStatus(
+                    `Security alerts loaded successfully ` +
+                    `— Last updated: ${now}`
+                );
+
             } catch (error) {
-                status.textContent =
-                    `Unable to load security alerts: ${error.message}`;
-                status.className = "error";
+                showStatus(
+                    `Unable to update security alerts: ` +
+                    error.message,
+                    true
+                );
+
+            } finally {
+                state.loading = false;
+                refreshButton.disabled = false;
             }
         }
 
+        document.getElementById("event-filter")
+            .addEventListener("change", renderAlertTable);
+
+        document.getElementById("ip-filter")
+            .addEventListener("change", renderAlertTable);
+
+        document.getElementById("search-input")
+            .addEventListener("input", renderAlertTable);
+
+        document.getElementById("refresh-button")
+            .addEventListener("click", loadDashboard);
+
+        document.getElementById("close-details")
+            .addEventListener("click", () => {
+                document.getElementById("details-dialog").close();
+            });
+
         loadDashboard();
+
+        // Automatically request updated alerts every 5 seconds.
         setInterval(loadDashboard, 5000);
     </script>
 </body>
