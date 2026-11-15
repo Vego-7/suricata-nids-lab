@@ -1,0 +1,211 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suricata NIDS Dashboard</title>
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            padding: 24px;
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
+        }
+
+        h1 { margin: 0 0 8px; }
+        h2 { font-size: 18px; }
+
+        main {
+            max-width: 1200px;
+            margin: auto;
+            padding: 24px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 16px;
+        }
+
+        .card {
+            padding: 20px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+        }
+
+        .number {
+            font-size: 36px;
+            font-weight: bold;
+            color: #38bdf8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #334155;
+            text-align: left;
+        }
+
+        th { color: #94a3b8; }
+
+        .table-wrap { overflow-x: auto; }
+        .error { color: #f87171; }
+        .muted { color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Suricata NIDS Security Dashboard</h1>
+        <p class="muted">Security Monitoring &amp; Alert Analysis</p>
+    </header>
+
+    <main>
+        <p id="status" class="muted">Loading security alerts...</p>
+
+        <section class="grid">
+            <div class="card">
+                <h2>Total Alerts</h2>
+                <div class="number" id="total-alerts">-</div>
+            </div>
+
+            <div class="card">
+                <h2>Event Types</h2>
+                <div id="event-types">-</div>
+            </div>
+
+            <div class="card">
+                <h2>Source IPs</h2>
+                <div id="source-ips">-</div>
+            </div>
+
+            <div class="card">
+                <h2>Usernames</h2>
+                <div id="usernames">-</div>
+            </div>
+        </section>
+
+        <section class="card" style="margin-top: 24px;">
+            <h2>Recent Security Alerts</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>Event Type</th>
+                            <th>Source IP</th>
+                            <th>Source Port</th>
+                            <th>Username</th>
+                            <th>Time Delta</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-alerts">
+                        <tr><td colspan="6">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function renderCounts(elementId, counts) {
+            const container = document.getElementById(elementId);
+            container.replaceChildren();
+
+            const entries = Object.entries(counts || {});
+            if (entries.length === 0) {
+                container.textContent = "No data";
+                return;
+            }
+
+            for (const [name, count] of entries) {
+                const row = document.createElement("p");
+                row.textContent = `${name}: ${count}`;
+                container.appendChild(row);
+            }
+        }
+
+        function renderAlerts(alerts) {
+            const tbody = document.getElementById("recent-alerts");
+            tbody.replaceChildren();
+
+            if (!alerts.length) {
+                const row = tbody.insertRow();
+                const cell = row.insertCell();
+                cell.colSpan = 6;
+                cell.textContent = "No security alerts found";
+                return;
+            }
+
+            const fields = [
+                "timestamp",
+                "event_type",
+                "src_ip",
+                "src_port",
+                "username",
+                "time_delta_seconds"
+            ];
+
+            for (const alert of alerts) {
+                const row = tbody.insertRow();
+
+                for (const field of fields) {
+                    const cell = row.insertCell();
+                    const value = alert[field];
+
+                    cell.textContent =
+                        value === undefined || value === null
+                            ? "-"
+                            : String(value);
+                }
+            }
+        }
+
+        async function loadDashboard() {
+            const status = document.getElementById("status");
+
+            try {
+                const response = await fetch("/api/alerts/summary", {
+                    cache: "no-store"
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                document.getElementById("total-alerts").textContent =
+                    data.total_alerts;
+
+                renderCounts("event-types", data.event_types);
+                renderCounts("source-ips", data.source_ips);
+                renderCounts("usernames", data.usernames);
+                renderAlerts(data.recent_alerts || []);
+
+                status.textContent = "Security alerts loaded successfully";
+                status.className = "muted";
+            } catch (error) {
+                status.textContent =
+                    `Unable to load security alerts: ${error.message}`;
+                status.className = "error";
+            }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>
