@@ -1,0 +1,19 @@
+
+[Unit]
+Description=Suricata NIDS Security Dashboard
+After=network.target
+
+[Service]
+Type=simple
+User=nids-bro
+Group=nids-bro
+WorkingDirectory=/home/nids-bro/suricata-nids-lab/dashboard
+ExecStart=/home/nids-bro/suricata-nids-lab/.venv/bin/gunicorn --bind 127.0.0.1:5000 --workers 1 app:app
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

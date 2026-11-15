@@ -1,0 +1,18 @@
+[Unit]
+Description=Suricata NIDS Real-time SSH Correlation Engine
+Wants=network-online.target
+After=network-online.target suricata.service ssh.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/nids-bro/suricata-nids-lab/analyzer
+ExecStart=/usr/bin/python3 -u /home/nids-bro/suricata-nids-lab/analyzer/realtime_ssh_correlation.py
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
